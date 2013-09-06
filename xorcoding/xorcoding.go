@@ -1,8 +1,8 @@
 package xorcoding
 
-import "unsafe"
-import "log"
 import "fmt"
+import "code.google.com/p/vitess/go/relog"
+import "os"
 
 // number of bytes required to store encoding header length
 const ehead_len = 2
@@ -12,6 +12,8 @@ const lhead_len = 8
 
 // full header length: encoding header + length header
 const fhead_len = ehead_len + lhead_len
+
+var log = relog.New(os.Stdout, "", relog.INFO)
 
 // XorEncode takes a data_block as input and produces b + 1 chunks from it
 // Original data block can then be recovered from any of b chunks
@@ -40,7 +42,7 @@ func XorEncode(data_block []byte, b byte) (chunks [][]byte) {
 	// calculate chunk length
 	chunk_length := len(data_block) / int(b)
 
-	log.Printf("b: %d; n: %d; original_length: %d (%d bytes); multiplier: %d; padded length: %d; chunk_length: %d\n", b, n, original_length, unsafe.Sizeof(original_length), multiplier, len(data_block), chunk_length)
+	log.Debug("b: %d; n: %d; original_length: %d; multiplier: %d; padded length: %d; chunk_length: %d\n", b, n, original_length, multiplier, len(data_block), chunk_length)
 
 	// 2. Prepare 6-byte headers
 
@@ -53,13 +55,13 @@ func XorEncode(data_block []byte, b byte) (chunks [][]byte) {
 		headers[i][0] = b
 		headers[i][1] = i
 	}
-	log.Printf("headers:\t%v\n", headers)
+	log.Debug("headers:\t%v\n", headers)
 	// write chunk length info
 	for i = 0; i < n; i++ {
 		// first b-1 chunks has equal length
-		*(*uintptr)(unsafe.Pointer(&headers[i][2])) = *(*uintptr)(unsafe.Pointer(&original_length))
+		setInt(headers[i], 2, original_length)
 	}
-	log.Printf("headers:\t%v\n", headers)
+	log.Debug("headers:\t%v\n", headers)
 
 	// 3. Calculate coding block contents
 
@@ -71,18 +73,18 @@ func XorEncode(data_block []byte, b byte) (chunks [][]byte) {
 	}
 	// allocate space for coding block
 	chunks[b] = make([]byte, chunk_length)
-	log.Printf("chunks:\t%v\n", chunks)
+	log.Debug("chunks:\t%v\n", chunks)
 
 	// write coding block
 	ArraysXor(chunks[:b], chunks[b], chunk_length)
-	log.Printf("chunks:\t%v\n", chunks)
+	log.Debug("chunks:\t%v\n", chunks)
 
 	// 4. Join headers with chunks
 
 	for i = 0; i < n; i++ {
 		chunks[i] = append(headers[i], chunks[i]...)
 	}
-	log.Printf("result:\t%v\n", chunks)
+	log.Debug("result:\t%v\n", chunks)
 
 	return chunks
 }
@@ -96,11 +98,11 @@ func XorDecode(chunks [][]byte) (data_block []byte) {
 	// total number of chunks
 	n := b + 1
 	// original data_block length
-	original_length := *(*uintptr)(unsafe.Pointer(&chunks[0][2]))
+	original_length := getInt(chunks[0], 2)
 	// one chunk legth, used for missing block recovery and joining chunks
 	chunk_length := len(chunks[0]) - fhead_len
 
-	log.Printf("b: %d; n: %d; original_length: %d (%d bytes); chunk_length: %d\n", b, n, original_length, unsafe.Sizeof(original_length), chunk_length)
+	log.Debug("b: %d; n: %d; original_length: %d; chunk_length: %d\n", b, n, original_length, chunk_length)
 
 
 	// 2. Prepare chunks (required) and check integrity (optional)
@@ -112,8 +114,8 @@ func XorDecode(chunks [][]byte) (data_block []byte) {
 		sorted[chunks[i][1]] = chunks[i][fhead_len:]
 	}
 
-	log.Printf("unsorted:\t%v", chunks)
-	log.Printf("sorted:\t%v", sorted)
+	log.Debug("unsorted:\t%v", chunks)
+	log.Debug("sorted:\t%v", sorted)
 
 	// check integrity (optional)
 	var counter byte = 0
@@ -129,7 +131,7 @@ func XorDecode(chunks [][]byte) (data_block []byte) {
 		panic(fmt.Sprintf("not enough chunks to decode data block; required: %d; found: %d", b, counter))
 	}
 
-	log.Printf("counter: %d; nil_chunk: %d\n", counter, nil_chunk)
+	log.Debug("counter: %d; nil_chunk: %d\n", counter, nil_chunk)
 
 
 	// 3. Perform data recovery (if required) and join into original data block
@@ -137,15 +139,15 @@ func XorDecode(chunks [][]byte) (data_block []byte) {
 	// recover missing data chunk if required
 	var i byte
 	if nil_chunk != b {
-		log.Println("recovering of missing data chunk required")
+		log.Debug("recovering of missing data chunk required")
 		striped := make([][]byte, b)
 		for i = 0; i < b; i++ {
 			striped[i] = chunks[i][fhead_len:]
 		}
-		log.Printf("striped:\t%v", striped)
+		log.Debug("striped:\t%v", striped)
 		sorted[nil_chunk] = make([]byte, chunk_length)
 		ArraysXor(striped, sorted[nil_chunk], chunk_length)
-		log.Printf("sorted:\t%v", sorted)
+		log.Debug("sorted:\t%v", sorted)
 	}
 
 	// join sorted chunks into original data block
@@ -154,7 +156,7 @@ func XorDecode(chunks [][]byte) (data_block []byte) {
 		data_block = append(data_block, sorted[i]...)
 	}
 	
-	log.Printf("data_block:\t%v", data_block)
+	log.Debug("data_block:\t%v", data_block)
 
 	return data_block[:original_length]
 }
