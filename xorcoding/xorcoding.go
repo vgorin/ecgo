@@ -6,11 +6,11 @@ import "code.google.com/p/vitess/go/relog"
 // number of bytes required to store encoding header length
 const ehead_len = 2
 
-// number of bytes required to store chunk length (64bit)
-const lhead_len = 8
+// sizeof(int64), also number of bytes required to store chunk length (64bit)
+const int64_size = 8
 
 // full header length: encoding header + length header
-const fhead_len = ehead_len + lhead_len
+const fhead_len = ehead_len + int64_size
 
 // logger
 var log = relog.New(os.Stdout, "", relog.INFO)
@@ -22,7 +22,7 @@ func XorEncode(data_block []byte, b byte) (chunks [][]byte) {
 	n, original_length, chunk_length, data_block := encInitValues(data_block, b)
 
 	// 2. Prepare 6-byte headers
-	headers := encCreateHeaders(b, n, original_length)
+	headers := encCreateHeaders(b, n, original_length, chunk_length)
 
 	// 3. Calculate coding block contents
 	chunks = encCreateChunks(data_block, b, n, chunk_length)

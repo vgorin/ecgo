@@ -1,5 +1,17 @@
 package xorcoding
 
+func CalcPaddedCapacity(original_length int, b byte) (padded_capacity int) {
+	// data block length must to be multiple of int64_size * b,
+	var multiplier int = int64_size * int(b)
+
+	// pad data block if necessary
+	if r := original_length % multiplier; r != 0 {
+		return original_length + multiplier - r
+	}
+
+	return original_length
+}
+
 // encInit pads original data block (returning poiter to padded one), inits n, original_length, chunk_length
 func encInitValues(data_block []byte, b byte) (n byte, original_length, chunk_length int, padded_data_block []byte) {
 	// total number of chunks
@@ -9,9 +21,10 @@ func encInitValues(data_block []byte, b byte) (n byte, original_length, chunk_le
 	original_length = len(data_block)
 
 	// data block length must to be multiple of int64_size * b,
-	var multiplier int = lhead_len * int(b)
+	var multiplier int = int64_size * int(b)
 
 	// pad data block if necessary
+	padded_data_block = data_block
 	if r := original_length % multiplier; r != 0 {
 		// s stands for sparse block of length r
 		s := make([]byte, multiplier-r)
@@ -21,19 +34,19 @@ func encInitValues(data_block []byte, b byte) (n byte, original_length, chunk_le
 	// calculate chunk length
 	chunk_length = len(padded_data_block) / int(b)
 
-	log.Debug("b: %d; n: %d; original_length: %d; multiplier: %d; padded length: %d; chunk_length: %d\n", b, n, original_length, multiplier, len(data_block), chunk_length)
+	log.Debug("b: %d; n: %d; original_length: %d; multiplier: %d; padded length: %d; chunk_length: %d\n", b, n, original_length, multiplier, len(padded_data_block), chunk_length)
 
 	return n, original_length, chunk_length, padded_data_block
 }
 
 // encHeaders creates headers for chunks (they contain b, chunk number, original block length)
-func encCreateHeaders(b, n byte, original_length int) (headers [][]byte) {
+func encCreateHeaders(b, n byte, original_length, chunk_length int) (headers [][]byte) {
 	// create headers
 	headers = make([][]byte, n)
 	var i byte
 	for i = 0; i < n; i++ {
 		// initialize
-		headers[i] = make([]byte, fhead_len)
+		headers[i] = make([]byte, fhead_len, fhead_len + chunk_length)
 		// write encoding info
 		headers[i][0] = b
 		headers[i][1] = i

@@ -34,7 +34,6 @@ func decCheckIntegrity(b byte, sorted [][]byte) (nil_chunk byte, err error) {
 	var counter byte = 0
 	nil_chunk = b
 	for i := range sorted {
-		log.Debug("sorted[%d] == nil: %t (%v)", i, sorted[i] == nil, sorted[i])
 		if sorted[i] != nil {
 			counter++
 		} else {
@@ -73,7 +72,7 @@ func decJoinChunks(sorted [][]byte, b, chunk_length int) (data_block []byte) {
 		data_block = append(data_block, sorted[i]...)
 	}
 
-	log.Debug("data_block:\t%v", data_block)
+	log.Debug("data_block (%d bytes):\t%v", len(data_block), data_block)
 
 	return data_block
 }
