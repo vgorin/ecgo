@@ -2,6 +2,9 @@ package xorcoding
 
 import "unsafe"
 
+// sizeof(int64)
+const int64_size = 8
+
 func setInt(bytes []byte, offset, value int) {
 	*(*int)(unsafe.Pointer(&bytes[offset])) = value
 }

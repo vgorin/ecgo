@@ -5,8 +5,13 @@ import "flag"
 import "os"
 import "log"
 import "runtime/pprof"
+import "net/http"
+import _ "net/http/pprof"
+import "time"
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+var web = flag.String("web", "", "enable web server on port")
+var inf = flag.String("inf", "", "use infinite loop (useful for web server)")
 
 func main() {
 	flag.Parse()
@@ -20,10 +25,20 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
+	if *web != "" {
+		go func() {
+			log.Println(http.ListenAndServe("localhost:" + *web, nil))
+		}()
+	}
+
 	// encode data block using b = 2 (renamed as bp)
-	block_size := 1 << 22
+	block_size := 1 << 28
 	bp := byte(2)
 	data_block := make([]byte, block_size)
 	xorcoding.XorEncode(data_block, bp)
-	log.Println("benchmark complete")
+	for *inf != "" {
+		xorcoding.XorEncode(data_block, bp)
+		time.Sleep(1 << 20)
+	}
+	log.Println("profiling complete")
 }

@@ -6,11 +6,11 @@ import "code.google.com/p/vitess/go/relog"
 // number of bytes required to store encoding header length
 const ehead_len = 2
 
-// sizeof(int64), also number of bytes required to store chunk length (64bit)
-const int64_size = 8
+// number of bytes required to store chunk length (64bit)
+const lhead_len = 8
 
 // full header length: encoding header + length header
-const fhead_len = ehead_len + int64_size
+const fhead_len = ehead_len + lhead_len
 
 // logger
 var log = relog.New(os.Stdout, "", relog.INFO)
