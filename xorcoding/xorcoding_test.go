@@ -25,7 +25,10 @@ func TestIntegrity(t *testing.T) {
 	data_block := []byte("This is a test for XOR-based erasure coding module")
 	chunks := XorEncode(data_block, 2)
 	chunks = chunks[1:]
-	recovered_block := XorDecode(chunks)
+	recovered_block, err := XorDecode(chunks)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if bytes.Compare(data_block, recovered_block) != 0 {
 		t.Fatalf("recovered block doesn't much original data block")
 	}
