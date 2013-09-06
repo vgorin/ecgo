@@ -30,3 +30,11 @@ func TestIntegrity(t *testing.T) {
 		t.Fatalf("recovered block doesn't much original data block")
 	}
 }
+
+func BenchmarkXorEncode(b *testing.B) {
+	// encode data block using b = 2 (renamed as bp)
+	block_size := b.N
+	bp := byte(2)
+	data_block := make([]byte, block_size)
+	XorEncode(data_block, bp)
+}
