@@ -1,4 +1,4 @@
-package jerasure
+package jerasurego
 
 /*
 #include "cauchy.h"
@@ -11,6 +11,8 @@ import "C"
 
 import "unsafe"
 import "runtime"
+import "errors"
+import "fmt"
 
 // TODO: 1. read codec parameters from config
 // TODO: 2. later on remove config and implement caching for matrices instead
@@ -36,8 +38,9 @@ var bitmatrix *C.int
 
 // TODO: implement PKCS7 padding instead of saving block length
 type Metadata struct {
-	// number of chunks required to assemble the object, nubmer of paRity chunks, original object length
-	B, R, L int
+	// original object length
+	// TODO: add b and r
+	Length int64
 }
 
 func init() {
@@ -90,19 +93,55 @@ func CauchyEncode(data_block []byte) (chunks [][]byte, meta *Metadata) {
 	}
 
 	// write coding c
-	data := (**C.char)(unsafe.Pointer(&pointers[:b][0]))
-	coding := (**C.char)(unsafe.Pointer(&pointers[b:][0]))
-	C.jerasure_bitmatrix_encode(k, m, w, bitmatrix, data, coding, C.int(chunk_length), block_size)
-
-	return chunks, &Metadata{
-		B: b,
-		R: r,
-		L: original_length,
-	}
+	data_ptrs := (**C.char)(unsafe.Pointer(&pointers[:b][0]))
+	coding_ptrs := (**C.char)(unsafe.Pointer(&pointers[b:][0]))
+	C.jerasure_bitmatrix_encode(k, m, w, bitmatrix, data_ptrs, coding_ptrs, C.int(chunk_length), block_size)
+	return chunks, &Metadata{Length: int64(original_length)}
 }
 
 // CauchyDecode recovers original data_block from chunks given
-func CauchyDecode(chunks [][]byte) (data_block []byte, err error) {
-	// TODO: implement
-	return nil, nil
+func CauchyDecode(chunks [][]byte, meta *Metadata) (data_block []byte, err error) {
+	if len(chunks) != n {
+		return nil, errors.New(fmt.Sprintf("chunks length must be %d (variable b, r, n is not implemented yet)", n))
+	}
+	var chunk_length int = -1
+	row_k_ones := C.int(1)
+	missing := make([]int, n)
+	var j int = 0
+	for i := range chunks {
+		if chunks[i] == nil || len(chunks[i]) == 0 {
+			missing[j] = i
+			j++
+		} else if chunk_length == -1 {
+			chunk_length = len(chunks[i])
+		}
+	}
+	missing[j] = -1
+	j++
+
+	for i := range chunks {
+		if chunks[i] == nil || len(chunks[i]) == 0 {
+			chunks[i] = make([]byte, chunk_length)
+		}
+	}
+
+	erasures := (*C.int)(unsafe.Pointer(&missing[:j][0]))
+	pointers := make([]*byte, n)
+	for i := range chunks {
+		pointers[i] = &chunks[i][0]
+	}
+	data_ptrs := (**C.char)(unsafe.Pointer(&pointers[:b][0]))
+	coding_ptrs := (**C.char)(unsafe.Pointer(&pointers[b:][0]))
+	status := C.jerasure_bitmatrix_decode(k, m, w, bitmatrix, row_k_ones, erasures, data_ptrs, coding_ptrs, C.int(chunk_length), block_size)
+
+	if status != 0 {
+		return nil, errors.New(fmt.Sprintf("jerasure_bitmatrix_decode returned %d status code", status))
+	}
+
+	data_block = make([]byte, 0, chunk_length * b)
+	for i := 0; i < b; i++ {
+		data_block = append(data_block, chunks[i]...)
+	}
+	
+	return data_block[:meta.Length], nil
 }
