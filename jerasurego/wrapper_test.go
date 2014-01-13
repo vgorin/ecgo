@@ -19,8 +19,8 @@ func TestCauchyDecode(t *testing.T) {
 	if meta.Length != int64(len(data_block)) {
 		t.Fail()
 	}
-	chunks[0] = nil
 	chunks[1] = nil
+	chunks[3] = nil
 	chunks[5] = nil
 	chunks[9] = nil
 	chunks[13] = nil

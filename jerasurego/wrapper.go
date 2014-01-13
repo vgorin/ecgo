@@ -1,3 +1,11 @@
+// Copyright 2013-2014 Vasiliy Gorin.
+// Use of this source code is governed by a GNU-style
+// license that can be found in the LICENSE file.
+
+// Original Jerasure C/C++ code –
+// Copyright 2007 James S. Plank
+// See copyright notice inside *.c, *.h files
+
 package jerasurego
 
 /*
@@ -36,7 +44,7 @@ var k, m, w, block_size C.int
 // bitmatrix is a subject for caching
 var bitmatrix *C.int
 
-// TODO: implement PKCS7 padding instead of saving block length
+// TODO: implement PKCS5 padding instead of saving block length
 type Metadata struct {
 	// original object length
 	// TODO: add b and r
@@ -125,7 +133,7 @@ func CauchyDecode(chunks [][]byte, meta *Metadata) (data_block []byte, err error
 		}
 	}
 
-	erasures := (*C.int)(unsafe.Pointer(&missing[:j][0]))
+	erasures := erasures(missing[:j]) // (*C.int)(unsafe.Pointer(&missing[:j][0]))
 	pointers := make([]*byte, n)
 	for i := range chunks {
 		pointers[i] = &chunks[i][0]
@@ -138,10 +146,10 @@ func CauchyDecode(chunks [][]byte, meta *Metadata) (data_block []byte, err error
 		return nil, errors.New(fmt.Sprintf("jerasure_bitmatrix_decode returned %d status code", status))
 	}
 
-	data_block = make([]byte, 0, chunk_length * b)
+	data_block = make([]byte, 0, chunk_length*b)
 	for i := 0; i < b; i++ {
 		data_block = append(data_block, chunks[i]...)
 	}
-	
+
 	return data_block[:meta.Length], nil
 }
