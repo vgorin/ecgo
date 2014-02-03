@@ -1,7 +1,7 @@
 package xorcoding
 
-import "os"
-import "code.google.com/p/vitess/go/relog"
+//import "os"
+//import "code.google.com/p/vitess/go/relog"
 
 // number of bytes required to store encoding header length
 const ehead_len = 2
@@ -13,7 +13,7 @@ const lhead_len = 8
 const fhead_len = ehead_len + lhead_len
 
 // logger
-var log = relog.New(os.Stdout, "", relog.INFO)
+//var log = relog.New(os.Stdout, "", relog.INFO)
 
 // XorEncode takes a data_block as input and produces b + 1 chunks from it
 // Original data block can then be recovered from any of b chunks

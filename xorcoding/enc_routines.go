@@ -34,7 +34,7 @@ func encInitValues(data_block []byte, b byte) (n byte, original_length, chunk_le
 	// calculate chunk length
 	chunk_length = len(padded_data_block) / int(b)
 
-	log.Debug("b: %d; n: %d; original_length: %d; multiplier: %d; padded length: %d; chunk_length: %d\n", b, n, original_length, multiplier, len(padded_data_block), chunk_length)
+//	log.Debug("b: %d; n: %d; original_length: %d; multiplier: %d; padded length: %d; chunk_length: %d\n", b, n, original_length, multiplier, len(padded_data_block), chunk_length)
 
 	return n, original_length, chunk_length, padded_data_block
 }
@@ -51,13 +51,13 @@ func encCreateHeaders(b, n byte, original_length, chunk_length int) (headers [][
 		headers[i][0] = b
 		headers[i][1] = i
 	}
-	log.Debug("headers:\t%v\n", headers)
+//	log.Debug("headers:\t%v\n", headers)
 	// write chunk length info
 	for i = 0; i < n; i++ {
 		// first b-1 chunks has equal length
 		setInt(headers[i], 2, original_length)
 	}
-	log.Debug("headers:\t%v\n", headers)
+//	log.Debug("headers:\t%v\n", headers)
 
 	return headers
 }
@@ -74,11 +74,11 @@ func encCreateChunks(data_block []byte, b, n byte, chunk_length int) (chunks [][
 	}
 	// allocate space for coding block
 	chunks[b] = make([]byte, chunk_length)
-	log.Debug("chunks:\t%v\n", chunks)
+//	log.Debug("chunks:\t%v\n", chunks)
 
 	// write coding block
 	arraysXor(chunks[:b], chunks[b], chunk_length)
-	log.Debug("chunks:\t%v\n", chunks)
+//	log.Debug("chunks:\t%v\n", chunks)
 
 	return chunks
 }
@@ -88,7 +88,7 @@ func encAppendChunks(n byte, headers, chunks [][]byte) (full_chunks [][]byte) {
 	for i = 0; i < n; i++ {
 		chunks[i] = append(headers[i], chunks[i]...)
 	}
-	log.Debug("result:\t%v\n", chunks)
+//	log.Debug("result:\t%v\n", chunks)
 
 	return chunks
 }
