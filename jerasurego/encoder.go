@@ -1,3 +1,15 @@
+// Copyright 2013-2014 Vasiliy Gorin.
+// Use of this source code is governed by a GNU-style
+// license that can be found in the LICENSE file.
+
+// Original Jerasure C/C++ code –
+// Copyright 2007 James S. Plank
+// See copyright notice inside *.c, *.h files
+
+/*
+ * Bitmatrix-based Cauchy Reed-Solomon encoding related routines
+ */
+
 package jerasurego
 
 /*
@@ -11,6 +23,7 @@ import "C"
 
 import "unsafe"
 
+// encoder_params stores parameters required for Encoder initialization
 type encoder_params struct {
 	b,
 	r,
@@ -19,6 +32,7 @@ type encoder_params struct {
 	block_size uint
 }
 
+// NewEncoderParams constructs encoder_params structure, checking validity of parameters specified
 func NewEncoderParams(b, r, word_size byte, block_size uint) encoder_params {
 	if b < 1 {
 		panic("b < 1")
@@ -44,6 +58,7 @@ func NewEncoderParams(b, r, word_size byte, block_size uint) encoder_params {
 	}
 }
 
+// CauchyEncoder reprsents a Bitmatrix-based Cauchy Reed-Solomon Encoder
 type CauchyEncoder struct {
 	p *encoder_params
 	k,
@@ -53,6 +68,7 @@ type CauchyEncoder struct {
 	bitmatrix *C.int
 }
 
+// NewCauchyEncoder creates new CauchyEncoder, initialized with parameters from p
 func NewCauchyEncoder(p encoder_params) *CauchyEncoder {
 	k := C.int(p.b)
 	m := C.int(p.r)
@@ -76,6 +92,7 @@ func (e *CauchyEncoder) Encode(data_block []byte) (chunks [][]byte, length int) 
 	// save original block length
 	original_length := len(data_block)
 
+	// extract required parameters
 	b := int(e.p.b)
 	n := int(e.p.n)
 	word_size := int(e.p.word_size)
@@ -119,10 +136,12 @@ func (e *CauchyEncoder) Encode(data_block []byte) (chunks [][]byte, length int) 
 	return chunks, original_length
 }
 
+// GetCauchyEncoder retrieves an Encoder from DefaultCauchyEncoderCache
 func GetCauchyEncoder(p encoder_params) *CauchyEncoder {
 	return DefaultCauchyEncoderCache.Get(p)
 }
 
+// CauchyEncode performs Encode on the default Encoder
 func CauchyEncode(data_block []byte, p encoder_params) (chunks [][]byte, length int) {
 	return GetCauchyEncoder(p).Encode(data_block)
 }

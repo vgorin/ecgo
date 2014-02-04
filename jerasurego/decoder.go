@@ -1,3 +1,15 @@
+// Copyright 2013-2014 Vasiliy Gorin.
+// Use of this source code is governed by a GNU-style
+// license that can be found in the LICENSE file.
+
+// Original Jerasure C/C++ code –
+// Copyright 2007 James S. Plank
+// See copyright notice inside *.c, *.h files
+
+/*
+ * Bitmatrix-based Cauchy Reed-Solomon decoding related routines
+ */
+
 package jerasurego
 
 /*
@@ -12,6 +24,8 @@ import "C"
 import "fmt"
 import "errors"
 import "unsafe"
+
+// TODO: create decoding-related structures and cache
 
 // Decode recovers original data_block from chunks given
 func (e *CauchyEncoder) Decode(chunks [][]byte, length int) (data_block []byte, err error) {
@@ -63,6 +77,7 @@ func (e *CauchyEncoder) Decode(chunks [][]byte, length int) (data_block []byte, 
 	return data_block[:length], nil
 }
 
+// CauchyDecode performs Decode on the default Encoder 
 func CauchyDecode(chunks [][]byte, p encoder_params, length int) (data_block []byte, err error) {
 	return GetCauchyEncoder(p).Decode(chunks, length)
 }
