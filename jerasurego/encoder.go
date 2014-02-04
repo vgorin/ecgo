@@ -9,10 +9,7 @@ package jerasurego
 */
 import "C"
 
-import "sync"
 import "unsafe"
-
-import "github.com/golang/groupcache/lru"
 
 type encoder_params struct {
 	b,
@@ -120,45 +117,6 @@ func (e *CauchyEncoder) Encode(data_block []byte) (chunks [][]byte, length int) 
 	coding_ptrs := (**C.char)(unsafe.Pointer(&pointers[b:][0]))
 	C.jerasure_bitmatrix_encode(e.k, e.m, e.w, e.bitmatrix, data_ptrs, coding_ptrs, C.int(chunk_length), e.block_size)
 	return chunks, original_length
-}
-
-type CauchyEncoderCache struct {
-	mutex sync.RWMutex
-	cache *lru.Cache
-}
-
-func NewCauchyEncoderCache(capacity int) *CauchyEncoderCache {
-	return &CauchyEncoderCache{
-		cache: lru.New(capacity),
-	}
-}
-
-var DefaultCauchyEncoderCache *CauchyEncoderCache = NewCauchyEncoderCache(64)
-
-func (c *CauchyEncoderCache) Get(p encoder_params) *CauchyEncoder {
-	if encoder, ok := c.get_sync(p); ok {
-		return encoder
-	}
-	encoder := NewCauchyEncoder(p)
-
-	c.put_sync(p, encoder)
-
-	return encoder
-}
-
-func (c *CauchyEncoderCache) get_sync(p encoder_params) (*CauchyEncoder, bool) {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
-	if encoder, ok := c.cache.Get(p); ok {
-		return encoder.(*CauchyEncoder), ok
-	}
-	return nil, false
-}
-
-func (c *CauchyEncoderCache) put_sync(p encoder_params, encoder *CauchyEncoder) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	c.cache.Add(p, encoder)
 }
 
 func GetCauchyEncoder(p encoder_params) *CauchyEncoder {
