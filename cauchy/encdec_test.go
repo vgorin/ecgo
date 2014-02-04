@@ -6,7 +6,7 @@
 // Copyright 2007 James S. Plank
 // See copyright notice inside *.c, *.h files
 
-package jerasurego
+package cauchy
 
 import "testing"
 import "bytes"

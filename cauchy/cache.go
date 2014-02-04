@@ -10,11 +10,11 @@
  * LRU-Caches required for encoding/decoding routines
  */
 
-package jerasurego
+package cauchy
 
 import "sync"
 
-import "github.com/golang/groupcache/lru"
+import "github.com/vgorin/ecgo/util/lru"
 
 // CauchyEncoderCache cache for CauchyEncoder structures
 type CauchyEncoderCache struct {

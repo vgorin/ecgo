@@ -10,7 +10,7 @@
  * Bitmatrix-based Cauchy Reed-Solomon decoding related routines
  */
 
-package jerasurego
+package cauchy
 
 /*
 #include "cauchy.h"

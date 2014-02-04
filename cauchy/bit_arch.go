@@ -16,7 +16,7 @@
  * TODO: We must compile both C and Go code in the same bit architecture!
  */
 
-package jerasurego
+package cauchy
 
 /*
 #include "sizeof.h"

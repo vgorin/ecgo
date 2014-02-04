@@ -10,7 +10,7 @@
  * Bitmatrix-based Cauchy Reed-Solomon encoding related routines
  */
 
-package jerasurego
+package cauchy
 
 /*
 #include "cauchy.h"
@@ -28,14 +28,17 @@ type encoder_params struct {
 	b,
 	r,
 	n,
-	word_size byte
-	block_size uint
+	word_size int
+	block_size int
 }
 
 // NewEncoderParams constructs encoder_params structure, checking validity of parameters specified
-func NewEncoderParams(b, r, word_size byte, block_size uint) encoder_params {
+func NewEncoderParams(b, r, word_size, block_size int) encoder_params {
 	if b < 1 {
 		panic("b < 1")
+	}
+	if r < 0 {
+		panic("r < 0")
 	}
 	if b + r > 255 {
 		panic("b + r > 255")
@@ -43,10 +46,13 @@ func NewEncoderParams(b, r, word_size byte, block_size uint) encoder_params {
 	if word_size < 1 {
 		panic("word_size < 1")
 	}
-	if (1 << word_size) < uint(b + r) {
-		panic("(1 << word_size) < b + r")
+	if 1 << uint(word_size) < b + r {
+		panic("1 << word_size < b + r")
 	}
-	if block_size < uint(word_size) {
+	if block_size < 1 {
+		panic("block_size < 1")
+	}
+	if block_size < int(word_size) {
 		panic("block_size < word_size")
 	}
 	return encoder_params{
@@ -93,10 +99,14 @@ func (e *CauchyEncoder) Encode(data_block []byte) (chunks [][]byte, length int) 
 	original_length := len(data_block)
 
 	// extract required parameters
-	b := int(e.p.b)
-	n := int(e.p.n)
-	word_size := int(e.p.word_size)
-	block_size := int(e.p.block_size)
+	b := e.p.b
+	n := e.p.n
+	word_size := e.p.word_size
+	block_size := e.p.block_size
+	k := e.k
+	m := e.m
+	w := e.w
+	bitmatrix := e.bitmatrix
 
 	// data block length must to be multiple of base, word size, block size
 	var multiplier int = b * word_size * block_size
@@ -132,7 +142,7 @@ func (e *CauchyEncoder) Encode(data_block []byte) (chunks [][]byte, length int) 
 	// write coding c
 	data_ptrs := (**C.char)(unsafe.Pointer(&pointers[:b][0]))
 	coding_ptrs := (**C.char)(unsafe.Pointer(&pointers[b:][0]))
-	C.jerasure_bitmatrix_encode(e.k, e.m, e.w, e.bitmatrix, data_ptrs, coding_ptrs, C.int(chunk_length), e.block_size)
+	C.jerasure_bitmatrix_encode(k, m, w, bitmatrix, data_ptrs, coding_ptrs, C.int(chunk_length), e.block_size)
 	return chunks, original_length
 }
 
