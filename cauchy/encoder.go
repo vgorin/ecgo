@@ -29,38 +29,38 @@ type encoder_params struct {
 	r,
 	n,
 	word_size int
-	block_size int
+	packet_size int
 }
 
 // NewEncoderParams constructs encoder_params structure, checking validity of parameters specified
-func NewEncoderParams(b, r, word_size, block_size int) encoder_params {
+func NewEncoderParams(b, r, word_size, packet_size int) encoder_params {
 	if b < 1 {
 		panic("b < 1")
 	}
 	if r < 0 {
 		panic("r < 0")
 	}
-	if b + r > 255 {
+	if b+r > 255 {
 		panic("b + r > 255")
 	}
 	if word_size < 1 {
 		panic("word_size < 1")
 	}
-	if 1 << uint(word_size) < b + r {
+	if 1<<uint(word_size) < b+r {
 		panic("1 << word_size < b + r")
 	}
-	if block_size < 1 {
-		panic("block_size < 1")
+	if packet_size < 1 {
+		panic("packet_size < 1")
 	}
-	if block_size < int(word_size) {
-		panic("block_size < word_size")
+	if packet_size < int(word_size) {
+		panic("packet_size < word_size")
 	}
 	return encoder_params{
-		b:          b,
-		r:          r,
-		n:          b + r,
-		word_size:  word_size,
-		block_size: block_size,
+		b:           b,
+		r:           r,
+		n:           b + r,
+		word_size:   word_size,
+		packet_size: packet_size,
 	}
 }
 
@@ -70,7 +70,7 @@ type CauchyEncoder struct {
 	k,
 	m,
 	w,
-	block_size C.int
+	packet_size C.int
 	bitmatrix *C.int
 }
 
@@ -83,12 +83,12 @@ func NewCauchyEncoder(p encoder_params) *CauchyEncoder {
 	bitmatrix := C.jerasure_matrix_to_bitmatrix(k, m, w, matrix)
 
 	return &CauchyEncoder{
-		p:          &p,
-		k:          k,
-		m:          m,
-		w:          w,
-		block_size: C.int(p.block_size),
-		bitmatrix:  bitmatrix,
+		p:           &p,
+		k:           k,
+		m:           m,
+		w:           w,
+		packet_size: C.int(p.packet_size),
+		bitmatrix:   bitmatrix,
 	}
 }
 
@@ -102,14 +102,14 @@ func (e *CauchyEncoder) Encode(data_block []byte) (chunks [][]byte, length int) 
 	b := e.p.b
 	n := e.p.n
 	word_size := e.p.word_size
-	block_size := e.p.block_size
+	packet_size := e.p.packet_size
 	k := e.k
 	m := e.m
 	w := e.w
 	bitmatrix := e.bitmatrix
 
 	// data block length must to be multiple of base, word size, block size
-	var multiplier int = b * word_size * block_size
+	var multiplier int = b * word_size * packet_size
 
 	// pad data block if necessary
 	if r := original_length % multiplier; r != 0 {
@@ -142,7 +142,7 @@ func (e *CauchyEncoder) Encode(data_block []byte) (chunks [][]byte, length int) 
 	// write coding c
 	data_ptrs := (**C.char)(unsafe.Pointer(&pointers[:b][0]))
 	coding_ptrs := (**C.char)(unsafe.Pointer(&pointers[b:][0]))
-	C.jerasure_bitmatrix_encode(k, m, w, bitmatrix, data_ptrs, coding_ptrs, C.int(chunk_length), e.block_size)
+	C.jerasure_bitmatrix_encode(k, m, w, bitmatrix, data_ptrs, coding_ptrs, C.int(chunk_length), e.packet_size)
 	return chunks, original_length
 }
 

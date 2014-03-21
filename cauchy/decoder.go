@@ -63,7 +63,7 @@ func (e *CauchyEncoder) Decode(chunks [][]byte, length int) (data_block []byte, 
 	}
 	data_ptrs := (**C.char)(unsafe.Pointer(&pointers[:b][0]))
 	coding_ptrs := (**C.char)(unsafe.Pointer(&pointers[b:][0]))
-	status := C.jerasure_bitmatrix_decode(e.k, e.m, e.w, e.bitmatrix, row_k_ones, erasures, data_ptrs, coding_ptrs, C.int(chunk_length), e.block_size)
+	status := C.jerasure_bitmatrix_decode(e.k, e.m, e.w, e.bitmatrix, row_k_ones, erasures, data_ptrs, coding_ptrs, C.int(chunk_length), e.packet_size)
 
 	if status != 0 {
 		return nil, errors.New(fmt.Sprintf("jerasure_bitmatrix_decode returned %d status code", status))
